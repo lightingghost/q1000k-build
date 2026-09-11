@@ -65,15 +65,21 @@ jobs:
 
     - name: Compile OpenWrt
       run: |
+        status=1
         for mode in c s; do
-          docker_exec -e MODE=$mode DK bash -c '
+          if docker_exec -e MODE="$mode" DK bash -e -c '
             bash $DK_PROFILE/pre_compile.sh 2>&- ||:
             cd $DK_OPENWRT
             export FORCE_UNSAFE_CONFIGURE=1 CCACHE_SLOPPINESS=file_stat_matches,include_file_mtime,time_macros CCACHE_NOHASHDIR=true CCACHE_COMPILERCHECK=content
-            make -j$(($(nproc) + 1)) V=$MODE toolchain/install
-            staging_dir/host/bin/ccache -d /ghcache -sz ||:
-          ' && break
+            make -j$(($(nproc) + 1)) V="$MODE" toolchain/install
+            [ ! -x staging_dir/host/bin/ccache ] || staging_dir/host/bin/ccache -d /ghcache -sz ||:
+          '; then
+            status=0
+            break
+          fi
+          echo "::warning::Toolchain compilation attempt V=$mode failed."
         done
+        [ "$status" -eq 0 ] || exit "$status"
         sudo chown -R "$(id -u):$(id -g)" stcache
 
     - name: Upload builder container

@@ -86,15 +86,21 @@ jobs:
 
     - name: Compile OpenWrt
       run: |
+        status=1
         for mode in c s; do
-          docker_exec -e MODE=$mode DK bash -c '
+          if docker_exec -e MODE="$mode" DK bash -e -c '
             bash $DK_PROFILE/pre_compile.sh 2>&- ||:
             cd $DK_OPENWRT
             export FORCE_UNSAFE_CONFIGURE=1 CCACHE_SLOPPINESS=file_stat_matches,include_file_mtime,time_macros CCACHE_NOHASHDIR=true CCACHE_COMPILERCHECK=content
-            make -j$(($(nproc) + 1)) V=$MODE
-            staging_dir/host/bin/ccache -d /ghcache -sz ||:
-          ' && break
+            make -j$(($(nproc) + 1)) V="$MODE"
+            [ ! -x staging_dir/host/bin/ccache ] || staging_dir/host/bin/ccache -d /ghcache -sz ||:
+          '; then
+            status=0
+            break
+          fi
+          echo "::warning::OpenWrt compilation attempt V=$mode failed."
         done
+        exit "$status"
 
     - name: Create release
       run: |
@@ -104,10 +110,10 @@ jobs:
         [ -n "$SOURCE_REV" ] || { echo "::error::Missing OpenWrt source revision"; exit 1; }
         VERSION="${{ matrix.target }}_$(date +'%Y.%m.%d')_$SOURCE_REV"
         sed -i "s/^/    /; 1s/^/## $VERSION\n\n/" openwrt_bin/build_info
-        gh release list --json tagName --jq '.[].tagName' | grep "^${{ matrix.target }}_" | xargs -r gh release delete --cleanup-tag -y ||:
         shopt -s nullglob
         artifacts=(firmware/*-quantum_q1000k-initramfs-uImage.itb firmware/*-quantum_q1000k-squashfs-sysupgrade.bin)
         [ "${#artifacts[@]}" -eq 2 ] || { echo "::error::Expected Q1000K initramfs and sysupgrade images"; printf '%s\\n' firmware/*; exit 1; }
+        gh release list --json tagName --jq '.[].tagName' | grep "^${{ matrix.target }}_" | xargs -r gh release delete --cleanup-tag -y ||:
         gh release create "$VERSION" "${artifacts[@]}" --title "$VERSION" --notes-file openwrt_bin/build_info
 
     - name: Upload builder container
