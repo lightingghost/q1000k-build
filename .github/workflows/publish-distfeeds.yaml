@@ -1,5 +1,5 @@
-# saves to   https://w1700k.github.io/builds/distfeeds.list
-#   and      https://w1700k.github.io/builds/vermagic.txt
+# Publishes `distfeeds.list` and `vermagic.txt` to this repository's
+# GitHub Pages site for the Q1000K build infrastructure.
 
 name: publish-distfeeds
 on:

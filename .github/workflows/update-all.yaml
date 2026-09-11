@@ -8,7 +8,7 @@ on:
 permissions: {actions: write, contents: write}
 
 env:
-  REMOTE_REPOSITORY: OpenWRT-fanboy/OpenW1700k
+  REMOTE_REPOSITORY: lightingghost/openwrt-q1000k
 
 jobs:
   check:
@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        environment: [main, snapshot, ubi2-oc-auto]
+        environment: [main]
     environment: ${{ matrix.environment }}
     steps:
       - name: Checkout remote repository

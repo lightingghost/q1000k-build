@@ -1,17 +1,18 @@
-name: self-host fastbuild ubi2-oc
+name: self-host fastbuild Q1000K
 on: workflow_dispatch
 permissions: write-all
 jobs:
   build:
     name: Build ${{ matrix.target }}
     runs-on: self-hosted
-    strategy: {fail-fast: false, matrix: {target: [ubi2-oc]}}
+    strategy: {fail-fast: false, matrix: {target: [q1000k]}}
     env:
       DK_OPENWRT: /bld/openwrt
       DK_BIN: /bld/openwrt_bin
       DK_USER: /bld/user
       DK_PROFILE: /bld/user/current
       GH_TOKEN: ${{ github.token }}
+      IMG_BASE: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:base-builder
       IMG_INC: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ matrix.target }}-x86inc
     steps:
     - name: Fix workspace permissions
@@ -32,14 +33,12 @@ jobs:
 
     - name: Initialize environment
       run: |
-        curl -Z --create-dirs -Lo user/default/files/etc/apk/repositories.d/distfeeds.list https://w1700k.github.io/builds/distfeeds.list
-        curl -Z -Lo user/default/files/etc/vermagic.txt https://w1700k.github.io/builds/vermagic.txt
         [ -f "user/${{ matrix.target }}/config.diff" ] || { echo "::error::config.diff not found for ${{ matrix.target }}"; exit 1; }
-        rsync -aI --mkpath user/default/ user/${{ matrix.target }}/ user/current/ 2>&-
+        rsync -aI --mkpath user/${{ matrix.target }}/ user/current/ 2>&-
         echo 'CONFIG_CCACHE_DIR="/ghcache"' >> user/current/config.diff
         sudo tee /etc/docker/daemon.json <<< '{"max-concurrent-downloads":50,"max-concurrent-uploads":50,"experimental":true}'
         sudo systemctl reload docker
-        IMAGE=$IMG_INC; docker pull $IMAGE 2>&- || IMAGE=ghcr.io/w1700k/fastbuild_base:debian
+        IMAGE=$IMG_INC; docker pull $IMAGE 2>&- || IMAGE=$IMG_BASE
         docker rm -f DK 2>&- ||:
         docker run -dt --name DK -v $PWD/user:$DK_USER -v $PWD/openwrt_bin:$DK_BIN -v $PWD/ghcache:/ghcache -v $PWD/stcache:/stcache -v $PWD/dlcache:/dlcache $IMAGE
         sudo tee /usr/local/bin/docker_exec > /dev/null <<'DKR'
@@ -95,7 +94,10 @@ jobs:
         VERSION="${{ matrix.target }}_$(date +'%Y.%m.%d')_$(jq -r '.version_code' firmware/profiles.json)"
         sed -i "s/^/    /; 1s/^/## $VERSION\n\n/" openwrt_bin/build_info
         gh release list --json tagName --jq '.[].tagName' | grep "^${{ matrix.target }}_" | xargs -r gh release delete --cleanup-tag -y ||:
-        gh release create $VERSION firmware/*sysupgrade.itb --title $VERSION --notes-file openwrt_bin/build_info
+        shopt -s nullglob
+        artifacts=(firmware/*-quantum_q1000k-initramfs-uImage.itb firmware/*-quantum_q1000k-squashfs-sysupgrade.bin)
+        [ "${#artifacts[@]}" -eq 2 ] || { echo "::error::Expected Q1000K initramfs and sysupgrade images"; printf '%s\\n' firmware/*; exit 1; }
+        gh release create "$VERSION" "${artifacts[@]}" --title "$VERSION" --notes-file openwrt_bin/build_info
 
     - name: Upload builder container
       run: |

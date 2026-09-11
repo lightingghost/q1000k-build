@@ -1,17 +1,24 @@
-name: fastbuild ubi2-oc, ubi2, snapshot
-on: workflow_dispatch
+name: fastbuild Q1000K
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [openwrt-q1000k-updated]
 permissions: write-all
 jobs:
   build:
     name: Build ${{ matrix.target }}
     runs-on: ubuntu-24.04-arm
-    strategy: {fail-fast: false, matrix: {target: [ubi2-oc, ubi2, SNAPSHOT]}}
+    strategy: {fail-fast: false, matrix: {target: [q1000k]}}
     env:
       DK_OPENWRT: /bld/openwrt
       DK_BIN: /bld/openwrt_bin
       DK_USER: /bld/user
       DK_PROFILE: /bld/user/current
       GH_TOKEN: ${{ github.token }}
+      # Populated by the source repository's repository_dispatch event. Empty
+      # for a manual run, which builds the current main branch instead.
+      SOURCE_COMMIT: ${{ github.event.client_payload.sha || '' }}
+      IMG_BASE: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:base-builder
       IMG_INC: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ matrix.target }}-inc
     steps:
     - uses: actions/checkout@v7
@@ -30,24 +37,22 @@ jobs:
       run: |
         mkdir -p openwrt_bin ghcache stcache dlcache
         if [ -z "$(ls -A ghcache 2>&-)" ] || [ -z "$(ls -A stcache 2>&-)" ]; then
-          I=ghcr.io/w1700k/fastbuild_base:base-bldcache-${{ matrix.target }}
+          I=ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:base-bldcache-${{ matrix.target }}
           docker pull $I 2>&- && { docker create --name CA $I >/dev/null; for d in ghcache stcache dlcache; do docker cp CA:/$d/. $d; done; }
         fi
 
     - name: Initialize environment
       run: |
-        curl -Z --create-dirs -Lo user/default/files/etc/apk/repositories.d/distfeeds.list https://w1700k.github.io/builds/distfeeds.list
-        curl -Z -Lo user/default/files/etc/vermagic.txt https://w1700k.github.io/builds/vermagic.txt
         [ -f "user/${{ matrix.target }}/config.diff" ] || { echo "::error::config.diff not found for ${{ matrix.target }}"; exit 1; }
-        rsync -aI --mkpath user/default/ user/${{ matrix.target }}/ user/current/ 2>&-
+        rsync -aI --mkpath user/${{ matrix.target }}/ user/current/ 2>&-
         echo 'CONFIG_CCACHE_DIR="/ghcache"' >> user/current/config.diff
         sudo tee /etc/docker/daemon.json <<< '{"max-concurrent-downloads":50,"max-concurrent-uploads":50,"experimental":true}'
         sudo systemctl reload docker
-        IMAGE=$IMG_INC; docker pull $IMAGE 2>&- || IMAGE=ghcr.io/w1700k/fastbuild_base:base-builder
+        IMAGE=$IMG_INC; docker pull $IMAGE 2>&- || IMAGE=$IMG_BASE
         docker run -dt --name DK -v $PWD/user:$DK_USER -v $PWD/openwrt_bin:$DK_BIN -v $PWD/ghcache:/ghcache -v $PWD/stcache:/stcache -v $PWD/dlcache:/dlcache $IMAGE
         install -m 755 /dev/stdin /usr/local/bin/docker_exec <<'DKR'
         #!/bin/bash
-        for n in DK_BIN DK_USER DK_PROFILE DK_OPENWRT; do e+=(-e "$n=${!n}"); done
+        for n in DK_BIN DK_USER DK_PROFILE DK_OPENWRT SOURCE_COMMIT; do e+=(-e "$n=${!n}"); done
         exec docker exec -u 0 -i "${e[@]}" "$@"
         DKR
 
@@ -61,8 +66,16 @@ jobs:
           cd $DK_OPENWRT
           if [ ! -d .git ]; then git init; fi
           git remote set-url origin $REPO_URL 2>&- || git remote add origin $REPO_URL
-          git fetch && git checkout $REPO_BRANCH && git pull --rebase
-          { git log origin/main..$REPO_BRANCH --oneline || echo "(no commits ahead of main)"; } > files/build_info
+          git fetch
+          if [[ -n $SOURCE_COMMIT ]]; then
+            git merge-base --is-ancestor "$SOURCE_COMMIT" "origin/$REPO_BRANCH" || {
+              echo "::error::Dispatched commit is not on $REPO_BRANCH"; exit 1;
+            }
+            git checkout --detach "$SOURCE_COMMIT"
+          else
+            git checkout "$REPO_BRANCH" && git pull --ff-only
+          fi
+          { git log -1 --oneline HEAD; git log origin/main..HEAD --oneline ||:; } > files/build_info
           mountpoint $DK_BIN || { echo "::error::not mounted" >&2; exit 1; }
           cp files/build_info $DK_BIN
           ln -sf $DK_BIN bin && ln -sf /dlcache dl && ln -sf /stcache staging_dir
@@ -97,7 +110,10 @@ jobs:
         VERSION="${{ matrix.target }}_$(date +'%Y.%m.%d')_$(jq -r '.version_code' firmware/profiles.json)"
         sed -i "s/^/    /; 1s/^/## $VERSION\n\n/" openwrt_bin/build_info
         gh release list --json tagName --jq '.[].tagName' | grep "^${{ matrix.target }}_" | xargs -r gh release delete --cleanup-tag -y ||:
-        gh release create $VERSION firmware/*sysupgrade.itb --title $VERSION --notes-file openwrt_bin/build_info
+        shopt -s nullglob
+        artifacts=(firmware/*-quantum_q1000k-initramfs-uImage.itb firmware/*-quantum_q1000k-squashfs-sysupgrade.bin)
+        [ "${#artifacts[@]}" -eq 2 ] || { echo "::error::Expected Q1000K initramfs and sysupgrade images"; printf '%s\\n' firmware/*; exit 1; }
+        gh release create "$VERSION" "${artifacts[@]}" --title "$VERSION" --notes-file openwrt_bin/build_info
 
     - name: Upload builder container
       run: |
