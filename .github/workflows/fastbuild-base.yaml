@@ -67,7 +67,7 @@ jobs:
           if [ ! -d .git ]; then git init; fi
           git remote set-url origin $REPO_URL 2>&- || git remote add origin $REPO_URL
           git fetch && git checkout $REPO_BRANCH && git pull --rebase
-          { git log origin/main..$REPO_BRANCH --oneline || echo "(no commits ahead of main)"; } > files/build_info
+          { git log -1 --oneline HEAD; git log origin/main..HEAD --oneline ||:; } > files/build_info
           mountpoint $DK_BIN || { echo "::error::not mounted" >&2; exit 1; }
           cp files/build_info $DK_BIN
           ln -sf $DK_BIN bin && ln -sf /dlcache dl && ln -sf /stcache staging_dir
@@ -99,7 +99,9 @@ jobs:
       run: |
         sudo chown -R "$(id -u):$(id -g)" openwrt_bin stcache
         find -L openwrt_bin/targets/*/* -maxdepth 1 -type f -exec install -D -t firmware {} +
-        VERSION="${{ matrix.target }}_$(date +'%Y.%m.%d')_$(jq -r '.version_code' firmware/profiles.json)"
+        SOURCE_REV=$(awk 'NR == 1 { print substr($1, 1, 12) }' openwrt_bin/build_info)
+        [ -n "$SOURCE_REV" ] || { echo "::error::Missing OpenWrt source revision"; exit 1; }
+        VERSION="${{ matrix.target }}_$(date +'%Y.%m.%d')_$SOURCE_REV"
         sed -i "s/^/    /; 1s/^/## $VERSION\n\n/" openwrt_bin/build_info
         gh release list --json tagName --jq '.[].tagName' | grep "^${{ matrix.target }}_" | xargs -r gh release delete --cleanup-tag -y ||:
         shopt -s nullglob

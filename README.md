@@ -17,6 +17,9 @@ and base-image workflows can be dispatched ahead of it to prime those caches.
 The release step deliberately fails if either expected artifact is missing,
 instead of publishing an incomplete firmware release.
 
+Release tags include the 12-character OpenWrt source revision, so they remain
+traceable even when the optional `profiles.json` image overview is disabled.
+
 ## Automatic source builds
 
 `openwrt-q1000k` dispatches every push to `main` to the `fastbuild Q1000K`

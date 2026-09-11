@@ -121,7 +121,9 @@ jobs:
       run: |
         sudo chown -R "$(id -u):$(id -g)" openwrt_bin stcache
         find -L openwrt_bin/targets/*/* -maxdepth 1 -type f -exec install -D -t firmware {} +
-        VERSION="${{ matrix.target }}_$(date +'%Y.%m.%d')_$(jq -r '.version_code' firmware/profiles.json)"
+        SOURCE_REV=$(awk 'NR == 1 { print substr($1, 1, 12) }' openwrt_bin/build_info)
+        [ -n "$SOURCE_REV" ] || { echo "::error::Missing OpenWrt source revision"; exit 1; }
+        VERSION="${{ matrix.target }}_$(date +'%Y.%m.%d')_$SOURCE_REV"
         sed -i "s/^/    /; 1s/^/## $VERSION\n\n/" openwrt_bin/build_info
         gh release list --json tagName --jq '.[].tagName' | grep "^${{ matrix.target }}_" | xargs -r gh release delete --cleanup-tag -y ||:
         shopt -s nullglob
