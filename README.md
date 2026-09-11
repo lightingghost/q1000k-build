@@ -14,6 +14,8 @@ The source branch must define both Q1000K images before a workflow is run.
 The first firmware run falls back to the generic fastbuild bootstrap image and
 then publishes this repository's cache and incremental image. The toolchain
 and base-image workflows can be dispatched ahead of it to prime those caches.
+All workflows replace any container-local output directories with the mounted
+cache directories, so bootstrap builds publish their firmware artifacts.
 The release step deliberately fails if either expected artifact is missing,
 instead of publishing an incomplete firmware release.
 
