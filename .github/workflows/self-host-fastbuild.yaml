@@ -14,6 +14,8 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       IMG_BASE: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:base-builder
       IMG_INC: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ matrix.target }}-x86inc
+      # Used only until this repository has produced its first x86 incremental image.
+      IMG_BOOTSTRAP: ghcr.io/w1700k/fastbuild_base:debian
     steps:
     - name: Fix workspace permissions
       run: sudo chown -R "$(id -u):$(id -g)" dlcache stcache ghcache openwrt_bin 2>&- || true
@@ -38,7 +40,14 @@ jobs:
         echo 'CONFIG_CCACHE_DIR="/ghcache"' >> user/current/config.diff
         sudo tee /etc/docker/daemon.json <<< '{"max-concurrent-downloads":50,"max-concurrent-uploads":50,"experimental":true}'
         sudo systemctl reload docker
-        IMAGE=$IMG_INC; docker pull $IMAGE 2>&- || IMAGE=$IMG_BASE
+        IMAGE=$IMG_INC
+        if ! docker pull "$IMAGE" 2>&-; then
+          IMAGE=$IMG_BASE
+          if ! docker pull "$IMAGE" 2>&-; then
+            IMAGE=$IMG_BOOTSTRAP
+            docker pull "$IMAGE"
+          fi
+        fi
         docker rm -f DK 2>&- ||:
         docker run -dt --name DK -v $PWD/user:$DK_USER -v $PWD/openwrt_bin:$DK_BIN -v $PWD/ghcache:/ghcache -v $PWD/stcache:/stcache -v $PWD/dlcache:/dlcache $IMAGE
         sudo tee /usr/local/bin/docker_exec > /dev/null <<'DKR'

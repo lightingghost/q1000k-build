@@ -11,10 +11,11 @@ on its `main` branch. Each release contains exactly these artifacts:
 - `*-quantum_q1000k-squashfs-sysupgrade.bin`
 
 The source branch must define both Q1000K images before a workflow is run.
-Dispatch the toolchain workflow, then the base-image workflow, before the
-first firmware workflow. The release step deliberately fails if either
-expected artifact is missing, instead of publishing an incomplete firmware
-release.
+The first firmware run falls back to the generic fastbuild bootstrap image and
+then publishes this repository's cache and incremental image. The toolchain
+and base-image workflows can be dispatched ahead of it to prime those caches.
+The release step deliberately fails if either expected artifact is missing,
+instead of publishing an incomplete firmware release.
 
 ## Automatic source builds
 

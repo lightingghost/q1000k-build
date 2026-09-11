@@ -20,6 +20,8 @@ jobs:
       SOURCE_COMMIT: ${{ github.event.client_payload.sha || '' }}
       IMG_BASE: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:base-builder
       IMG_INC: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ matrix.target }}-inc
+      # Used only until this repository has produced its first base image.
+      IMG_BOOTSTRAP: ghcr.io/w1700k/fastbuild_base:base-builder
     steps:
     - uses: actions/checkout@v7
 
@@ -38,7 +40,12 @@ jobs:
         mkdir -p openwrt_bin ghcache stcache dlcache
         if [ -z "$(ls -A ghcache 2>&-)" ] || [ -z "$(ls -A stcache 2>&-)" ]; then
           I=ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:base-bldcache-${{ matrix.target }}
-          docker pull $I 2>&- && { docker create --name CA $I >/dev/null; for d in ghcache stcache dlcache; do docker cp CA:/$d/. $d; done; }
+          if docker pull "$I" 2>&-; then
+            docker create --name CA "$I" >/dev/null
+            for d in ghcache stcache dlcache; do docker cp "CA:/$d/." "$d"; done
+          else
+            echo "No build cache image found; continuing with empty caches."
+          fi
         fi
 
     - name: Initialize environment
@@ -48,7 +55,14 @@ jobs:
         echo 'CONFIG_CCACHE_DIR="/ghcache"' >> user/current/config.diff
         sudo tee /etc/docker/daemon.json <<< '{"max-concurrent-downloads":50,"max-concurrent-uploads":50,"experimental":true}'
         sudo systemctl reload docker
-        IMAGE=$IMG_INC; docker pull $IMAGE 2>&- || IMAGE=$IMG_BASE
+        IMAGE=$IMG_INC
+        if ! docker pull "$IMAGE" 2>&-; then
+          IMAGE=$IMG_BASE
+          if ! docker pull "$IMAGE" 2>&-; then
+            IMAGE=$IMG_BOOTSTRAP
+            docker pull "$IMAGE"
+          fi
+        fi
         docker run -dt --name DK -v $PWD/user:$DK_USER -v $PWD/openwrt_bin:$DK_BIN -v $PWD/ghcache:/ghcache -v $PWD/stcache:/stcache -v $PWD/dlcache:/dlcache $IMAGE
         install -m 755 /dev/stdin /usr/local/bin/docker_exec <<'DKR'
         #!/bin/bash
