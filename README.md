@@ -13,6 +13,11 @@ on its `main` branch. Each release contains exactly these artifacts:
 The source branch must define both Q1000K images before a workflow is run.
 The Q1000K profile includes `luci-ssl`, with LuCI, the uHTTPd web server and
 its RPC dependencies, for browser administration over HTTP or HTTPS.
+The profile also includes Airoha SoC Status (with temperature sensors),
+Airoha FlowSense and the EIP93 crypto module. The source repository must
+contain these packages; see its `target/linux/airoha/COMMUNITY.q1000k.md`
+for the W1700K commit review and Q1000K adaptations.
+
 The first firmware run falls back to the generic fastbuild bootstrap image and
 then publishes this repository's cache and incremental image. The toolchain
 and base-image workflows can be dispatched ahead of it to prime those caches.
