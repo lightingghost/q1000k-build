@@ -112,7 +112,7 @@ jobs:
         VERSION="${{ matrix.target }}_$(date +'%Y.%m.%d')_$SOURCE_REV"
         sed -i "s/^/    /; 1s/^/## $VERSION\n\n/" openwrt_bin/build_info
         shopt -s nullglob
-        artifacts=(firmware/*-quantum_q1000k-initramfs-uImage.itb firmware/*-quantum_q1000k-squashfs-sysupgrade.bin)
+        artifacts=(firmware/*-quantum_q1000k-initramfs-recovery.itb firmware/*-quantum_q1000k-squashfs-sysupgrade.itb)
         [ "${#artifacts[@]}" -eq 2 ] || { echo "::error::Expected Q1000K initramfs and sysupgrade images"; printf '%s\\n' firmware/*; exit 1; }
         gh release list --json tagName --jq '.[].tagName' | grep "^${{ matrix.target }}_" | xargs -r gh release delete --cleanup-tag -y ||:
         gh release create "$VERSION" "${artifacts[@]}" --title "$VERSION" --notes-file openwrt_bin/build_info

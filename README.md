@@ -7,10 +7,12 @@ The workflows build the `quantum_q1000k` device from
 [`lightingghost/openwrt-q1000k`](https://github.com/lightingghost/openwrt-q1000k)
 on its `main` branch. Each release contains exactly these artifacts:
 
-- `*-quantum_q1000k-initramfs-uImage.itb`
-- `*-quantum_q1000k-squashfs-sysupgrade.bin`
+- `*-quantum_q1000k-initramfs-recovery.itb`
+- `*-quantum_q1000k-squashfs-sysupgrade.itb`
 
 The source branch must define both Q1000K images before a workflow is run.
+The Q1000K profile includes `luci-ssl`, with LuCI, the uHTTPd web server and
+its RPC dependencies, for browser administration over HTTP or HTTPS.
 The first firmware run falls back to the generic fastbuild bootstrap image and
 then publishes this repository's cache and incremental image. The toolchain
 and base-image workflows can be dispatched ahead of it to prime those caches.
