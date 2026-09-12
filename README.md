@@ -5,7 +5,7 @@ for the Quantum Fiber Q1000K.
 
 The workflows build the `quantum_q1000k` device from
 [`lightingghost/openwrt-q1000k`](https://github.com/lightingghost/openwrt-q1000k)
-on its `main` branch. Each release contains exactly these artifacts:
+on its `q1000k-dev` branch. Each release contains exactly these artifacts:
 
 - `*-quantum_q1000k-initramfs-recovery.itb`
 - `*-quantum_q1000k-squashfs-sysupgrade.itb`
@@ -31,9 +31,9 @@ traceable even when the optional `profiles.json` image overview is disabled.
 
 ## Automatic source builds
 
-`openwrt-q1000k` dispatches every push to `main` to the `fastbuild Q1000K`
+`openwrt-q1000k` dispatches every push to `q1000k-dev` to the `fastbuild Q1000K`
 workflow, which builds the commit SHA from that push. Manual runs remain
-available through `workflow_dispatch` and build the latest `main` revision.
+available through `workflow_dispatch` and build the latest `q1000k-dev` revision.
 
 Create a fine-grained token restricted to `lightingghost/q1000k-build` with
 **Contents: write**, then save it in `lightingghost/openwrt-q1000k` as the

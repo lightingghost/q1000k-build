@@ -16,7 +16,7 @@ jobs:
       DK_PROFILE: /bld/user/current
       GH_TOKEN: ${{ github.token }}
       # Populated by the source repository's repository_dispatch event. Empty
-      # for a manual run, which builds the current main branch instead.
+      # for a manual run, which builds the configured q1000k-dev branch instead.
       SOURCE_COMMIT: ${{ github.event.client_payload.sha || '' }}
       IMG_BASE: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:base-builder
       IMG_INC: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ matrix.target }}-inc
