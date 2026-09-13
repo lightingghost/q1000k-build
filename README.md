@@ -3,12 +3,12 @@
 This project automates builds of the OpenWrt initramfs and sysupgrade images
 for the Quantum Fiber Q1000K.
 
-The workflows build the `quantum_q1000k` device from
+The workflows build the `quantum_q1000k-ubi` device from
 [`lightingghost/openwrt-q1000k`](https://github.com/lightingghost/openwrt-q1000k)
 on its `q1000k-dev` branch. Each release contains exactly these artifacts:
 
-- `*-quantum_q1000k-initramfs-recovery.itb`
-- `*-quantum_q1000k-squashfs-sysupgrade.itb`
+- `*-quantum_q1000k-ubi-initramfs-recovery.itb`
+- `*-quantum_q1000k-ubi-squashfs-sysupgrade.itb`
 
 The source branch must define both Q1000K images before a workflow is run.
 The Q1000K profile includes `luci-ssl`, with LuCI, the uHTTPd web server and
