@@ -71,7 +71,8 @@ def check_source(source, revision):
     git(source, 'merge-base', '--is-ancestor', revision, 'origin/' + BRANCH)
     if git(source, 'rev-parse', 'HEAD') != revision:
         raise ValueError('Source HEAD does not match the selected revision')
-    git(source, 'diff', '--exit-code', '--quiet', 'HEAD', '--')
+    if git(source, 'status', '--porcelain', '--untracked-files=all'):
+        raise ValueError('Source has tracked or untracked changes')
     for name in PACKAGE_PATHS:
         if not (source / name).is_file():
             raise ValueError('Selected source lacks ' + name)

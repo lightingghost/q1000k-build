@@ -46,13 +46,15 @@ Before compilation, run the helper from this builder checkout:
 python3 scripts/q1000k-xgspon-build.py verify /path/to/new-xgspon-build
 ```
 
-Verification rejects a changed HEAD, tracked source edits, missing package
+Verification rejects a changed HEAD, tracked or untracked source edits, missing package
 sources, a changed profile/manifest, and dependencies that silently removed a
 required configuration symbol. Then compile in the prepared source checkout
 using the normal `make download` and `make -jN` commands. Verify again before
 using the artifacts. Record the resolved `.config`, `selection.json`, feed
 revisions and artifact checksums with build results; pinning OpenWrt alone does
-not pin the separately fetched feeds.
+not pin the separately fetched feeds. Git-ignored inputs such as feeds and a
+user-provided `files/` overlay are outside the source-edit check and must be
+recorded separately. The helper supplies only `files/build_info`.
 
 The current work permits **read-only device access and never flashing**.
 Building these packages is not hardware acceptance or authorization to boot,

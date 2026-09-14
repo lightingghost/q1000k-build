@@ -23,6 +23,7 @@ class BuildTests(unittest.TestCase):
         self.git('config', 'user.name', 'Fixture')
         self.git('config', 'user.email', 'fixture@example.invalid')
         (self.repo / 'Makefile').write_text('all:\n\t@true\n')
+        (self.repo / '.gitignore').write_text('/.config\n/files\n')
         self.commit('base')
         self.base = self.git('rev-parse', 'HEAD')
         self.git('checkout', '-qb', 'q1000k-xgspon')
@@ -123,6 +124,12 @@ class BuildTests(unittest.TestCase):
         path.write_text('# changed\n')
         self.command('verify', self.output, success=False)
         path.write_text(initial)
+        self.command('verify', self.output)
+        # A new untracked patch can change compiled code without git diff.
+        added = source / 'package/kernel/airoha-pon/extra.patch'
+        added.write_text('untracked source input\n')
+        self.command('verify', self.output, success=False)
+        added.unlink()
         self.command('verify', self.output)
         subprocess.run(['git', '-C', str(source), 'checkout', '-q', '--detach', self.tip], check=True)
         self.command('verify', self.output, success=False)
