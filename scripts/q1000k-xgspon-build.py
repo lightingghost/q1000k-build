@@ -43,9 +43,11 @@ def settings():
     return values
 
 
-def profile():
-    return ((ROOT / 'user/q1000k/config.diff').read_text().rstrip() + '\n' +
-            (PROFILE / 'config.diff').read_text())
+def profile(kind='experimental'):
+    base = ROOT / ('user/q1000k-xgspon/bench.config' if kind == 'bench' else 'user/q1000k/config.diff')
+    if kind not in ('experimental', 'bench'):
+        raise ValueError('Unknown build profile')
+    return (base.read_text().rstrip() + '\n' + (PROFILE / 'config.diff').read_text())
 
 
 def config_values(text):
@@ -86,7 +88,7 @@ def prepare(args):
     # Convert a local source to an absolute path before changing directories.
     if Path(repo).exists():
         repo = str(Path(repo).resolve())
-    seed = profile()
+    seed = profile(args.profile)
     required = config_values(seed)
     output = args.directory.absolute()
     output.mkdir()  # Refuse even an empty existing directory; never overwrite a build.
@@ -97,14 +99,16 @@ def prepare(args):
     git(source, 'merge-base', '--is-ancestor', args.revision, 'origin/' + BRANCH)
     git(source, 'checkout', '--detach', args.revision)
     check_source(source, args.revision)
+    if args.profile == 'bench' and not (source / 'package/network/utils/q1000k-xgspon-bench/Makefile').is_file():
+        raise ValueError('Selected revision lacks the RAM bench implementation')
     (source / '.config').write_text(seed)
     (source / 'files').mkdir(exist_ok=True)
     (source / 'files/build_info').write_text(
-        f'Experimental Q1000K XGS-PON\nSource: {repo}\nBranch: {BRANCH}\n'
+        f'Experimental Q1000K XGS-PON ({args.profile})\nSource: {repo}\nBranch: {BRANCH}\n'
         f'Revision: {args.revision}\nPON activation and hardware acceptance are separate.\n')
     manifest = dict(schema_version=1, source=repo, branch=BRANCH, revision=args.revision,
                     profile_sha256=hashlib.sha256(seed.encode()).hexdigest(),
-                    required_config=required)
+                    required_config=required, profile=args.profile)
     (output / 'selection.json').write_text(json.dumps(manifest, indent=2) + '\n')
     print(f'Prepared {source} at {args.revision}. Run feeds setup and make defconfig, then verify.')
 
@@ -116,7 +120,7 @@ def verify(args):
         raise ValueError('Invalid experimental build manifest')
     source = output / 'openwrt'
     check_source(source, manifest['revision'])
-    seed = profile()
+    seed = profile(manifest.get('profile', 'experimental'))
     if manifest.get('profile_sha256') != hashlib.sha256(seed.encode()).hexdigest():
         raise ValueError('Builder profile changed; prepare a new build with that profile')
     required = config_values(seed)
@@ -137,6 +141,8 @@ def main():
     p = commands.add_parser('prepare', help='create a fresh source checkout and package profile')
     p.add_argument('--repo', help='source URL or local repository (default: experimental settings.ini)')
     p.add_argument('--revision', required=True, help='exact source commit on q1000k-xgspon')
+    p.add_argument('--profile', choices=('experimental', 'bench'), default='experimental',
+                   help='bench builds only a NAND-disabled, TX-inhibited RAM image at 192.168.0.1')
     p.add_argument('directory', type=Path, help='new build directory; must not exist')
     p.set_defaults(run=prepare)
     p = commands.add_parser('verify', help='check revision and resolved package selections before building')

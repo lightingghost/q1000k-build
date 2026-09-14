@@ -82,6 +82,23 @@ class BuildTests(unittest.TestCase):
                 self.prepare(value, success=False)
                 self.assertFalse(self.output.exists())
 
+    def test_bench_profile_is_explicit_and_rejects_address_changes(self):
+        path = self.repo / 'package/network/utils/q1000k-xgspon-bench/Makefile'
+        path.parent.mkdir(parents=True)
+        path.write_text('# fixture\n')
+        self.commit('bench')
+        self.command('prepare', '--repo', self.repo, '--revision', self.git('rev-parse', 'HEAD'),
+                     '--profile', 'bench', self.output)
+        self.resolve()
+        self.command('verify', self.output)
+        data = json.loads((self.output / 'selection.json').read_text())
+        self.assertEqual(data['profile'], 'bench')
+        self.assertEqual(data['required_config']['CONFIG_TARGET_ROOTFS_SQUASHFS'], 'n')
+        self.assertEqual(data['required_config']['CONFIG_TARGET_airoha_an7581_DEVICE_quantum_q1000k-ubi'], 'n')
+        path = self.output / 'openwrt/.config'
+        path.write_text(path.read_text().replace('192.168.0.1', '192.168.1.1'))
+        self.command('verify', self.output, success=False)
+
     def test_existing_directory_is_preserved(self):
         self.output.mkdir()
         sentinel = self.output / 'sentinel'
