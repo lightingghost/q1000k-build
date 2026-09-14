@@ -1,5 +1,21 @@
 # Experimental XGS-PON build profile
 
+For the separate NAND-disabled, TX-inhibited RAM bench, pass `--profile bench`
+to `prepare`. It selects `quantum_q1000k-xgspon-bench`, enables OpenWrt's
+IMAGEOPT/PREINITOPT gates and sets both normal LAN and preinit/failsafe to
+`192.168.0.1/24`. The bench package disables LAN DHCP, DHCPv6 and RA servers.
+Use a dedicated host address such as `192.168.0.2/24`; 192.168.1.1 is the
+user's working router and must not be used for Q1000K SSH. Verification
+rejects lost IP settings, a selected normal UBI profile or squashfs output.
+No automatic PON startup, firmware flash or hardware testing is performed.
+
+The bench target produces only its initramfs FIT. Check the exact image with
+the source repository's `tests/q1000k/check_pon_bench_image.py`. It validates
+FIT hashes, embedded initramfs, NAND/PCS exclusions, controller TX inhibit,
+network defaults and absent PON module autoload. Read the source repository's
+`target/linux/airoha/XGSPON-BENCH.q1000k.md` for staged runtime tests and the
+calibration/firmware inputs kept outside the generic image.
+
 This profile lives on the builder's `q1000k-xgspon` branch. It uses the normal
 Q1000K image selection plus the controller, vendor MAC/PHY, generic OMCI core,
 `q1000k-omci` command, diagnostics, LuCI, supervisor and inactive DHCP/DHCPv6 WAN
