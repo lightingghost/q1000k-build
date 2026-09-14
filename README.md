@@ -44,3 +44,11 @@ the source-repository dispatch workflow; that push will start the first
 automatic build.
 
 fastbuild adapted from https://github.com/tete1030/openwrt-fastbuild-actions
+
+## Explicit experimental XGS-PON builds
+
+The separate [XGS-PON profile](user/q1000k-xgspon/README.md) prepares a fresh,
+detached checkout at an explicit `q1000k-xgspon` source revision and verifies
+the experimental package selections after Kconfig resolution. It is a local,
+manual build path on the builder's experimental branch. The normal workflows,
+`q1000k-dev` selection and automatic release behavior are unchanged.

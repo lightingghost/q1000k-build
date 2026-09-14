@@ -1,0 +1,12 @@
+# Added to user/q1000k/config.diff by scripts/q1000k-xgspon-build.py.
+# Packages are experimental; inclusion does not enable the PON board nodes.
+CONFIG_DEVEL=y
+CONFIG_BROKEN=y
+CONFIG_PACKAGE_kmod-q1000k-pon-control=y
+CONFIG_PACKAGE_kmod-q1000k-omci=y
+CONFIG_PACKAGE_kmod-airoha-xpon-en757x=y
+CONFIG_PACKAGE_q1000k-xgspon=y
+CONFIG_PACKAGE_q1000k-omci-tools=y
+CONFIG_PACKAGE_q1000k-xgspon-service=y
+CONFIG_PACKAGE_q1000k-xgspon-wan=y
+CONFIG_PACKAGE_luci-app-econet-xpon=y
