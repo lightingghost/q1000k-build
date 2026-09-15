@@ -3,8 +3,8 @@
 For the separate NAND-disabled, TX-inhibited RAM bench, pass `--profile bench`
 to `prepare`. It selects `quantum_q1000k-xgspon-bench`, enables OpenWrt's
 IMAGEOPT/PREINITOPT gates and sets both normal LAN and preinit/failsafe to
-`192.168.0.1/24`. The bench package disables LAN DHCP, DHCPv6 and RA servers.
-Use a dedicated host address such as `192.168.0.2/24`; 192.168.1.1 is the
+`192.168.255.1/24`. The bench package disables LAN DHCP, DHCPv6 and RA servers.
+Use a dedicated host address such as `192.168.255.2/24`; 192.168.1.1 is the
 user's working router and must not be used for Q1000K SSH. Verification
 rejects lost IP settings, a selected normal UBI profile or squashfs output.
 No automatic PON startup, firmware flash or hardware testing is performed.

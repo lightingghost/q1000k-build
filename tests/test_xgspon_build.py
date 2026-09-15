@@ -96,7 +96,7 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(data['required_config']['CONFIG_TARGET_ROOTFS_SQUASHFS'], 'n')
         self.assertEqual(data['required_config']['CONFIG_TARGET_airoha_an7581_DEVICE_quantum_q1000k-ubi'], 'n')
         path = self.output / 'openwrt/.config'
-        path.write_text(path.read_text().replace('192.168.0.1', '192.168.1.1'))
+        path.write_text(path.read_text().replace('192.168.255.1', '192.168.1.1'))
         self.command('verify', self.output, success=False)
 
     def test_existing_directory_is_preserved(self):

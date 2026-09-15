@@ -142,7 +142,7 @@ def main():
     p.add_argument('--repo', help='source URL or local repository (default: experimental settings.ini)')
     p.add_argument('--revision', required=True, help='exact source commit on q1000k-xgspon')
     p.add_argument('--profile', choices=('experimental', 'bench'), default='experimental',
-                   help='bench builds only a NAND-disabled, TX-inhibited RAM image at 192.168.0.1')
+                   help='bench builds only a NAND-disabled, TX-inhibited RAM image at 192.168.255.1')
     p.add_argument('directory', type=Path, help='new build directory; must not exist')
     p.set_defaults(run=prepare)
     p = commands.add_parser('verify', help='check revision and resolved package selections before building')
