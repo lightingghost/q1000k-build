@@ -44,8 +44,8 @@ def settings():
 
 
 def profile(kind='experimental'):
-    base = ROOT / ('user/q1000k-xgspon/bench.config' if kind == 'bench' else 'user/q1000k/config.diff')
-    if kind not in ('experimental', 'bench'):
+    base = PROFILE / (kind + '.config') if kind in ('bench', 'activation') else ROOT / 'user/q1000k/config.diff'
+    if kind not in ('experimental', 'bench', 'activation'):
         raise ValueError('Unknown build profile')
     return (base.read_text().rstrip() + '\n' + (PROFILE / 'config.diff').read_text())
 
@@ -99,7 +99,7 @@ def prepare(args):
     git(source, 'merge-base', '--is-ancestor', args.revision, 'origin/' + BRANCH)
     git(source, 'checkout', '--detach', args.revision)
     check_source(source, args.revision)
-    if args.profile == 'bench' and not (source / 'package/network/utils/q1000k-xgspon-bench/Makefile').is_file():
+    if args.profile in ('bench', 'activation') and not (source / 'package/network/utils/q1000k-xgspon-bench/Makefile').is_file():
         raise ValueError('Selected revision lacks the RAM bench implementation')
     (source / '.config').write_text(seed)
     (source / 'files').mkdir(exist_ok=True)
@@ -141,7 +141,7 @@ def main():
     p = commands.add_parser('prepare', help='create a fresh source checkout and package profile')
     p.add_argument('--repo', help='source URL or local repository (default: experimental settings.ini)')
     p.add_argument('--revision', required=True, help='exact source commit on q1000k-xgspon')
-    p.add_argument('--profile', choices=('experimental', 'bench'), default='experimental',
+    p.add_argument('--profile', choices=('experimental', 'bench', 'activation'), default='experimental',
                    help='bench builds only a NAND-disabled, TX-inhibited RAM image at 192.168.255.1')
     p.add_argument('directory', type=Path, help='new build directory; must not exist')
     p.set_defaults(run=prepare)

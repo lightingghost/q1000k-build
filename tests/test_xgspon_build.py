@@ -59,6 +59,14 @@ class BuildTests(unittest.TestCase):
         config = self.output / 'openwrt/.config'
         config.write_text('CONFIG_HAVE_DOT_CONFIG=y\n' + config.read_text())
 
+    def test_activation_profile_is_one_ram_target_with_all_stages(self):
+        config=BUILD['config_values'](BUILD['profile']('activation'))
+        self.assertEqual(config['CONFIG_TARGET_airoha_an7581_DEVICE_quantum_q1000k-xgspon-activation'],'y')
+        self.assertEqual(config['CONFIG_TARGET_airoha_an7581_DEVICE_quantum_q1000k-xgspon-bench'],'n')
+        self.assertEqual(config['CONFIG_PACKAGE_q1000k-xgspon-validation'],'y')
+        self.assertEqual(config['CONFIG_PACKAGE_q1000k-xgspon-wan'],'y')
+        self.assertEqual(config['CONFIG_TARGET_PREINIT_IP'],'"192.168.255.1"')
+
     def test_pinned_ancestor_is_detached_and_source_is_unchanged(self):
         self.prepare()
         clone = self.output / 'openwrt'
