@@ -65,7 +65,7 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(config['CONFIG_TARGET_airoha_an7581_DEVICE_quantum_q1000k-xgspon-bench'],'n')
         self.assertEqual(config['CONFIG_PACKAGE_q1000k-xgspon-validation'],'y')
         self.assertEqual(config['CONFIG_PACKAGE_q1000k-xgspon-wan'],'y')
-        self.assertEqual(config['CONFIG_TARGET_PREINIT_IP'],'"192.168.255.1"')
+        self.assertEqual(config['CONFIG_TARGET_PREINIT_IP'],'"192.168.0.1"')
 
     def test_pinned_ancestor_is_detached_and_source_is_unchanged(self):
         self.prepare()
@@ -104,7 +104,7 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(data['required_config']['CONFIG_TARGET_ROOTFS_SQUASHFS'], 'n')
         self.assertEqual(data['required_config']['CONFIG_TARGET_airoha_an7581_DEVICE_quantum_q1000k-ubi'], 'n')
         path = self.output / 'openwrt/.config'
-        path.write_text(path.read_text().replace('192.168.255.1', '192.168.1.1'))
+        path.write_text(path.read_text().replace('192.168.0.1', '192.168.1.1'))
         self.command('verify', self.output, success=False)
 
     def test_existing_directory_is_preserved(self):

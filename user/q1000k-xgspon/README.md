@@ -1,10 +1,19 @@
 # Experimental XGS-PON build profile
 
+The normal `quantum_q1000k-ubi` target on the source's `q1000k-xgspon`
+branch now integrates PON and produces both initramfs recovery and SquashFS
+sysupgrade FITs. Its base configuration explicitly selects both formats.
+Use the default `experimental` profile with this branch for the normal pair;
+`bench` and `activation` below remain separate RAM-only targets. The source's
+`target/linux/airoha/XGSPON-NORMAL-IMAGES.q1000k.md` documents normal-image
+factory data, shared firmware, external private RAM patches and its `scripts/q1000k/image-build.py` local build wrapper.
+The main builder and `q1000k-dev` remain unchanged.
+
 For the separate NAND-disabled, TX-inhibited RAM bench, pass `--profile bench`
 to `prepare`. It selects `quantum_q1000k-xgspon-bench`, enables OpenWrt's
 IMAGEOPT/PREINITOPT gates and sets both normal LAN and preinit/failsafe to
-`192.168.255.1/24`. The bench package disables LAN DHCP, DHCPv6 and RA servers.
-Use a dedicated host address such as `192.168.255.2/24`; 192.168.1.1 is the
+`192.168.0.1/24`. The bench package disables LAN DHCP, DHCPv6 and RA servers.
+Use a dedicated host address such as `192.168.0.2/24`; 192.168.1.1 is the
 user's working router and must not be used for Q1000K SSH. Verification
 rejects lost IP settings, a selected normal UBI profile or squashfs output.
 No automatic PON startup, firmware flash or hardware testing is performed.
@@ -18,10 +27,15 @@ calibration/firmware inputs kept outside the generic image.
 
 This profile lives on the builder's `q1000k-xgspon` branch. It uses the normal
 Q1000K image selection plus the controller, vendor MAC/PHY, generic OMCI core,
-`q1000k-omci` command, diagnostics, LuCI, supervisor and inactive DHCP/DHCPv6 WAN
-packages. `CONFIG_BROKEN=y` exposes the experimental packages. It does not
-change the source's disabled PON device-tree nodes, supply OEM firmware or
-calibration, invent subscriber credentials, or enable the supervisor/WAN.
+`q1000k-omci` command, diagnostics, LuCI, supervisor and DHCP/DHCPv6 WAN
+packages. The normal device on the integrated source branch enables the
+required PON nodes. Generic builds include the shared OEM firmware pair and read each unit's
+identity/calibration from UBI factory. Subscriber registration and any ISP
+settings must be configured before service activation; no private data is
+embedded in generic images. The
+explicit package selections and `CONFIG_BROKEN=y` remain compatible with
+older experimental source checkpoints; current Q1000K packages no longer
+require that Kconfig gate.
 
 The existing workflows and `user/q1000k/settings.ini` still select
 `q1000k-dev`. This profile has no automatic workflow, release, upload or device
