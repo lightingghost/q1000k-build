@@ -156,10 +156,9 @@ jobs:
           bash $bp/custom.sh &>/dev/null ||:
           make defconfig
           while IFS= read -r required; do
-            case "$required" in
-              CONFIG_*=*|'# CONFIG_'*' is not set')
-                grep -Fxq "$required" .config || { echo "::error::Kconfig dropped $required"; exit 1; } ;;
-            esac
+            if [[ $required == CONFIG_*=* || $required == \#\ CONFIG_*\ is\ not\ set ]]; then
+              grep -Fxq "$required" .config || { echo "::error::Kconfig dropped $required"; exit 1; }
+            fi
           done < "$bp/config.diff"
           echo "CONFIG_VERSION_NUMBER=${{ matrix.target }}" >> .config
           make download -j8 2>&1 | tee /dev/stderr | grep -q "ERROR:" || [ $PIPESTATUS -ne 0 ] && exit 1 ||:
