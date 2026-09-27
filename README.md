@@ -49,6 +49,13 @@ fastbuild adapted from https://github.com/tete1030/openwrt-fastbuild-actions
 
 The separate [XGS-PON profile](user/q1000k-xgspon/README.md) prepares a fresh,
 detached checkout at an explicit `q1000k-xgspon` source revision and verifies
-the experimental package selections after Kconfig resolution. It is a local,
-manual build path on the builder's experimental branch. The normal workflows,
-`q1000k-dev` selection and automatic release behavior are unchanged.
+the experimental package selections after Kconfig resolution. The
+[`fastbuild Q1000K XGS-PON`](.github/workflows/fastbuild-xgspon.yaml) action on
+the builder's default branch builds the normal initramfs and sysupgrade pair
+from that source branch. Run it manually with an optional full source commit;
+leaving the input blank selects the current branch tip. A daily check at
+09:17 UTC automatically builds a new tip and skips one already published as a
+successful release. XGS-PON builds use separate compiled caches and publish
+prereleases tagged with the source revision. The normal `q1000k-dev` workflow
+and its source selection are unchanged. The scheduled XGS-PON path needs no
+cross-repository dispatch secret.

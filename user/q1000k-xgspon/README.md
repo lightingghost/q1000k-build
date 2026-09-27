@@ -7,7 +7,7 @@ Use the default `experimental` profile with this branch for the normal pair;
 `bench` and `activation` below remain separate RAM-only targets. The source's
 `target/linux/airoha/XGSPON-NORMAL-IMAGES.q1000k.md` documents normal-image
 factory data, shared firmware, external private RAM patches and its `scripts/q1000k/image-build.py` local build wrapper.
-The main builder and `q1000k-dev` remain unchanged.
+The normal builder workflow and `q1000k-dev` source branch remain unchanged.
 
 For the separate NAND-disabled, TX-inhibited RAM bench, pass `--profile bench`
 to `prepare`. It selects `quantum_q1000k-xgspon-bench`, enables OpenWrt's
@@ -25,7 +25,7 @@ network defaults and absent PON module autoload. Read the source repository's
 `target/linux/airoha/XGSPON-BENCH.q1000k.md` for staged runtime tests and the
 calibration/firmware inputs kept outside the generic image.
 
-This profile lives on the builder's `q1000k-xgspon` branch. It uses the normal
+This profile is included on the builder's default branch. It uses the normal
 Q1000K image selection plus the controller, vendor MAC/PHY, generic OMCI core,
 `q1000k-omci` command, diagnostics, LuCI, supervisor and DHCP/DHCPv6 WAN
 packages. The normal device on the integrated source branch enables the
@@ -37,9 +37,11 @@ explicit package selections and `CONFIG_BROKEN=y` remain compatible with
 older experimental source checkpoints; current Q1000K packages no longer
 require that Kconfig gate.
 
-The existing workflows and `user/q1000k/settings.ini` still select
-`q1000k-dev`. This profile has no automatic workflow, release, upload or device
-connection. Normal build caches and source checkouts are not reused.
+The existing normal workflows and `user/q1000k/settings.ini` still select
+`q1000k-dev`. The separate `fastbuild Q1000K XGS-PON` action runs manually or
+checks the source branch daily, builds the normal image pair, and publishes a
+prerelease only after both images are present. It does not connect to a device.
+Normal compiled caches and source checkouts are not reused.
 
 ## Prepare a pinned build
 
